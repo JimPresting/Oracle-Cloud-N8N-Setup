@@ -1,41 +1,123 @@
+**Summary of Steps**  
+1. Register on Oracle Cloud and optimize your account  
+2. Create an Always-Free VM with SSH keys  
+3. SSH into your instance  
+4. Reserve a static IP and configure an A-record  
+5. Install n8n (per the GCP guide)  
+6. Open HTTP/HTTPS & enable Load Balancing  
+
+---
+
 # Oracle-Cloud-N8N-Setup
 
-Setting up the Oracle Cloud often fails from the very start as you are not able to create an instance as given their generous always free tier limits people use it for private servers more often than for business related services. 
+Setting up an Oracle Cloud VM can be tricky due to Always-Free tier restrictions. By default, free-tier capacity is limited, so provisioning may fail unless you optimize your region choice or account type.
 
-Sign up on cloud.oracle.com (bare in mind you have to create an account name and email and password... if you are using a password manager the account name later wont be saved so remeber that one as you are going to need it for your login). 
-There is 2 major things you can do in order to increase the chance of even getting a free VM under their generous terms.
-1. Choose the location wisely (I tried Chicago Central US and wasnt able to create an instance for weeks). Bare in mind that the location you are choosing here can later not be changed (at least not regarding this account).
-2. Upgrade your account to a pay as you go account ... it will still be eligable to use the always free assets. So effectively it woulndt change but it increases your chances of getting a instance. For Frankfurt, Germany (closest to me) it worked wihtout setting the account up for a pay as you go so it mostly depends on the instance's location.
-![Screenshot 2025-04-30 111210](https://github.com/user-attachments/assets/c620bafd-4bd5-4808-b8e6-05863b1d88f5)
-![image](https://github.com/user-attachments/assets/f58fec3f-99e1-41c7-9d33-419279a495a0)
+---
+
+## Prerequisites
+
+- A valid Oracle Cloud account at cloud.oracle.com  
+- A remembered **Account Name** (password managers often omit this)  
+- An SSH key-pair (public & private)  
+
+---
+
+## 1. Register & Optimize Your Account
+
+1. **Sign up** at cloud.oracle.com  
+   - Provide Account Name, Email, Password  
+   - **Remember** the Account Name for future logins  
+
+2. **Boost provisioning success**  
+   - **Select the right region**  
+     - Some regions (e.g. Chicago – US-Central) may throttle Always-Free VMs  
+     - Choose a region with lighter demand (e.g. Frankfurt, Germany)  
+   - **Optionally upgrade** to **Pay As You Go**  
+     - Retains eligibility for Always-Free resources  
+     - Improves chances of successful VM creation  
+
+> **Note:** Region selection is permanent for that tenancy.
+
+---
+
+## 2. Create Your Always-Free VM
+
+1. From the Oracle Cloud **Dashboard**, click **Create Instance**.  
+2. Under **Shape**, choose an Always-Free configuration:  
+   - **RM1** processor  
+   - **4 OCPUs** (cores)  
+   - **24 GB RAM**  
+3. Leave **Boot Volume** and **Network** settings at default.  
+4. **Generate & Download** your SSH key-pair:  
+   - Keep the **private key** secure (e.g. in Downloads)  
+   - Note the location of your **public key**  
+
+![VM Creation](https://github.com/user-attachments/assets/eee9688f-eb67-4f61-9650-db0a171cde94)
+
+---
+
+## 3. SSH Access
+
+1. Locate your VM’s **Public IPv4**:  
+   - **Compute → Instances → Your Instance → Networking**  
+   - Copy the Public IP  
+
+   ![Networking Panel](https://github.com/user-attachments/assets/fce460e8-6b9a-4c83-9b4d-4c64e0d07a74)
+
+2. From your local terminal, run:  
+   ```bash
+   ssh -i ~/Downloads/ssh-key-2025-04-29.key ubuntu@YOUR_PUBLIC_IP
+   ```  
+   - Replace the key path and IP as needed  
+
+   ![SSH Login](https://github.com/user-attachments/assets/0956a199-d477-4e33-92fd-653a16a74866)
+
+---
+
+## 4. Reserve a Static IP & Configure DNS
+
+1. In Oracle Cloud, go to **Network → Virtual Cloud Networks → Public IPs**  
+   - **Assign** a reserved (static) Public IPv4 to your instance  
+
+2. In your domain registrar’s **DNS settings**, add an **A-record**:  
+
+| Host (subdomain)  | Type | Value (IPv4)         |
+|-------------------|:----:|----------------------|
+| `your-subdomain`  | A    | `<Your Static IPv4>` |
+
+![DNS A-Record](https://github.com/user-attachments/assets/8876b8eb-e8eb-4c9b-8d46-778efb358d13)
+
+---
+
+## 5. Install n8n (Follow GCP Guide)
+
+From here, the n8n installation on Oracle Cloud mirrors the Google Cloud steps:
+
+1. Follow the self-hosted n8n guide for GCP.  
+2. Adjust firewall/security settings as below.  
+
+🔗 [Continue with the n8n on GCP guide »](https://github.com/JimPresting/n8n-gcp-selfhost)
+
+---
+
+## 5.1 Open HTTP/HTTPS & Enable Load Balancing
+
+1. In the Oracle Cloud Console, navigate to **Networking → Virtual Cloud Networks**.  
+2. Select the VCN associated with your project (only one if new account).  
+3. Click **Security** in the left sidebar, then choose the **Default Security List** for that VCN.  
+4. Switch to the **Security Rules** tab, then click **Add Ingress Rules**.  
+5. Add these rules:  
+
+| Source CIDR   | IP Protocol | Port Range | Description         |
+|-------------: |------------:|-----------:|---------------------|
+| `0.0.0.0/0`   | TCP         | `80`       | Allow HTTP traffic  |
+| `0.0.0.0/0`   | TCP         | `443`      | Allow HTTPS traffic |
+
+![Screenshot 2025-04-30 125503](https://github.com/user-attachments/assets/4354a2e2-79d3-42fa-aa31-d40d3a8f1e3e)
+![image](https://github.com/user-attachments/assets/d1c3dd0e-02ae-4f1d-be58-511cd9b76824)
 
 
-## 1. Setting up your VM
 
-After signing up your welcome screen should look somewhat like this: 
-![image](https://github.com/user-attachments/assets/eee9688f-eb67-4f61-9650-db0a171cde94)
+6. Click **Save**.  
 
-Create your VM based on the configs you need (for always free tier use RM1 processor with 4 cores and 24GB of RAM and leave the boot network to default) 
-
-Make sure you download your public and private ssh key... 
-
-## 2. Establishing a connection via SSH
-
-open your terminal and enter the path to your private ssh key file... in my case thats in the downlaods folder and connect it with your public IP 
-You can get your public IP by clicking on instances --> your instance and networking 
-![image](https://github.com/user-attachments/assets/fce460e8-6b9a-4c83-9b4d-4c64e0d07a74)
-
-Enter that in your terminal locally:
-
-ssh -i C:\Users\ME\Downloads\ssh-key-2025-04-29.key ubuntu@YOURPUBLICIP
-
-![image](https://github.com/user-attachments/assets/0956a199-d477-4e33-92fd-653a16a74866)
-
-## 3. Make IP static and add A-level record
-
-Go to your Domain and its DNS settigns add a A level record enter a name of your subdomain and add the public ipv4 
-![image](https://github.com/user-attachments/assets/8876b8eb-e8eb-4c9b-8d46-778efb358d13)
-
-
-
-From here on out you can esta
+Your Oracle Cloud VM now has HTTP/HTTPS open and is ready for load-balanced n8n traffic!
