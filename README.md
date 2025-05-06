@@ -58,7 +58,7 @@ Setting up an Oracle Cloud VM can be tricky due to Always-Free tier restrictions
 
 ## 3. SSH Access
 
-1. Locate your VM’s **Public IPv4**:  
+1. Locate your VM's **Public IPv4**:  
    - **Compute → Instances → Your Instance → Networking**  
    - Copy the Public IP  
 
@@ -78,8 +78,10 @@ Setting up an Oracle Cloud VM can be tricky due to Always-Free tier restrictions
 
 1. In Oracle Cloud, go to **Network → Virtual Cloud Networks → Public IPs**  
    - **Assign** a reserved (static) Public IPv4 to your instance  
+   - For detailed instructions, watch this video: https://www.youtube.com/watch?v=-IVG9hTwN_Q
+   - If you already created an instance before, you can also later configure this by clicking on your Instance → Networking and then on your VNIC
 
-2. In your domain registrar’s **DNS settings**, add an **A-record**:  
+2. In your domain registrar's **DNS settings**, add an **A-record**:  
 
 | Host (subdomain)  | Type | Value (IPv4)         |
 |-------------------|:----:|----------------------|
