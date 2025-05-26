@@ -3,8 +3,9 @@
 2. Create an Always-Free VM with SSH keys  
 3. SSH into your instance  
 4. Reserve a static IP and configure an A-record  
-5. Install n8n (per the GCP guide)  
-6. Open HTTP/HTTPS & enable Load Balancing  
+5. **CRITICAL: Configure Ubuntu iptables firewall**
+6. Install n8n (per the GCP guide)  
+7. Open HTTP/HTTPS & enable Load Balancing  
 
 ---
 
@@ -91,18 +92,7 @@ Setting up an Oracle Cloud VM can be tricky due to Always-Free tier restrictions
 
 ---
 
-## 5. Install n8n (Follow GCP Guide)
-
-From here, the n8n installation on Oracle Cloud mirrors the Google Cloud steps:
-
-1. Follow the self-hosted n8n guide for GCP.  
-2. Adjust firewall/security settings as below.  
-
-🔗 [Continue with the n8n on GCP guide »](https://github.com/JimPresting/n8n-gcp-selfhost)
-
----
-
-## 5.1 Open HTTP/HTTPS & Enable Load Balancing
+## 5. Open HTTP/HTTPS in Oracle Cloud Security Lists
 
 1. In the Oracle Cloud Console, navigate to **Networking → Virtual Cloud Networks**.  
 2. Select the VCN associated with your project (only one if new account).  
@@ -118,8 +108,62 @@ From here, the n8n installation on Oracle Cloud mirrors the Google Cloud steps:
 ![Screenshot 2025-04-30 125503](https://github.com/user-attachments/assets/4354a2e2-79d3-42fa-aa31-d40d3a8f1e3e)
 ![image](https://github.com/user-attachments/assets/d1c3dd0e-02ae-4f1d-be58-511cd9b76824)
 
-
-
 6. Click **Save**.  
 
-Your Oracle Cloud VM now has HTTP/HTTPS open and is ready for load-balanced n8n traffic!
+---
+
+## 6. ⚠️ CRITICAL: Configure Ubuntu iptables Firewall ⚠️
+
+> **THIS IS THE MOST IMPORTANT STEP FOR ORACLE CLOUD!**  
+> Even with Oracle Security Lists configured, the Ubuntu instance has its own iptables firewall that blocks ports 80/443 by default. Without this step, Certbot will fail and your n8n instance won't be accessible!
+
+SSH into your instance and run these commands:
+
+```bash
+# Add rules to allow HTTP and HTTPS traffic
+sudo iptables -I INPUT 4 -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT 5 -p tcp --dport 443 -j ACCEPT
+
+# Install iptables-persistent to save rules permanently
+sudo apt-get install iptables-persistent -y
+
+# Save the current iptables rules
+sudo netfilter-persistent save
+```
+
+To verify the rules are added:
+```bash
+sudo iptables -L INPUT -n -v --line-numbers
+```
+
+You should see the rules for ports 80 and 443 in the list.
+
+> **Note:** This is the KEY DIFFERENCE between Oracle Cloud and GCP. GCP doesn't have this local firewall issue, but Oracle Ubuntu instances do!
+
+---
+
+## 7. Install n8n
+
+From here, the installation process is identical to the GCP guide:
+
+🔗 **[Continue with the n8n on GCP guide from Step 3 »](https://github.com/JimPresting/n8n-gcp-selfhost#step-3-setting-up-n8n)**
+
+The remaining steps include:
+- Installing Docker
+- Setting up n8n with Docker
+- Installing and configuring Nginx
+- Setting up SSL with Certbot
+- Creating auto-update scripts and cronjobs
+
+All commands and configurations from the GCP guide work exactly the same on Oracle Cloud once you've completed the iptables configuration above.
+
+---
+
+## Summary
+
+The main differences between Oracle Cloud and GCP setup are:
+1. **Oracle Security Lists** instead of GCP Firewall rules
+2. **Ubuntu iptables firewall** must be configured (Step 6) - this is CRITICAL!
+3. Different SSH username (`ubuntu` for Oracle vs your Google account name for GCP)
+
+Once these Oracle-specific steps are complete, follow the GCP guide for all n8n installation and configuration steps.
