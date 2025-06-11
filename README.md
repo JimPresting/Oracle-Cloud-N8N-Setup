@@ -108,7 +108,8 @@ Setting up an Oracle Cloud VM can be tricky due to Always-Free tier restrictions
 ![Screenshot 2025-04-30 125503](https://github.com/user-attachments/assets/4354a2e2-79d3-42fa-aa31-d40d3a8f1e3e)
 ![image](https://github.com/user-attachments/assets/d1c3dd0e-02ae-4f1d-be58-511cd9b76824)
 
-6. Click **Save**.  
+6. Click **Save**.
+7. Note: You can add all sorts of ports here. If you install PostgreSQL or Redis, you just need to add the appropriate port, and it will work.
 
 ---
 
